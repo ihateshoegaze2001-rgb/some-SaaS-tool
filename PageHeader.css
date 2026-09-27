@@ -1,0 +1,36 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 34px 40px 22px;
+  border-bottom: 1px solid var(--line-light);
+}
+
+.page-header__title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.page-header__subtitle {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  max-width: 52ch;
+}
+
+.page-header__actions {
+  flex: none;
+}
+
+@media (max-width: 760px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px 18px;
+  }
+}
