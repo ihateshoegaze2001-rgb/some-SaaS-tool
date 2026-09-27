@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caption Board — local prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#27352c; --panel:#1c2620; --cream:#f7efdc; --ink:#2a2822;
+  --ig:#f2c94c; --tt:#5fd6c8; --x:#e9e6dc; --pin:#d6493d;
+  --panel-ink:#f4f1e8; --muted:#9aab9f;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--board);color:var(--panel-ink);min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sidebar{width:360px;flex:none;background:var(--panel);padding:28px 24px;display:flex;flex-direction:column;gap:18px}
+.brand{font-family:'Caveat',cursive;font-weight:700;font-size:2.2rem;margin:0}
+.brand span{color:var(--pin)}
+.sub{color:var(--muted);font-size:.85rem;margin:0}
+label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:8px}
+textarea{width:100%;min-height:90px;background:#0f1512;border:1px solid #3a473e;border-radius:8px;color:var(--panel-ink);padding:12px;font-family:inherit;font-size:.92rem}
+.tabs,.chips{display:flex;flex-wrap:wrap;gap:8px}
+.tab,.chip{padding:8px 12px;border-radius:8px;border:1px solid #3a473e;background:#0f1512;color:var(--panel-ink);font-family:inherit;font-size:.82rem;cursor:pointer}
+.tab.active,.chip.active{background:var(--pin);border-color:var(--pin);color:#fff}
+.plan-box{background:#0f1512;border:1px solid #3a473e;border-radius:8px;padding:12px;font-size:.8rem}
+.plan-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.plan-toggle{display:flex;gap:6px}
+.plan-toggle button{flex:1;padding:6px;border-radius:6px;border:1px solid #3a473e;background:#111;color:var(--panel-ink);font-size:.75rem;cursor:pointer}
+.plan-toggle button.active{background:var(--cream);color:var(--ink);font-weight:700}
+.bar-track{height:6px;background:#111;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:var(--pin)}
+.go button{width:100%;padding:13px;border:none;border-radius:8px;background:var(--pin);color:#fff;font-weight:700;cursor:pointer}
+.go button:disabled{opacity:.5}
+.status{font-size:.8rem;color:var(--muted);min-height:18px}
+.status.err{color:#ffb4a8}
+.board{flex:1;padding:36px;overflow-y:auto}
+.empty{max-width:400px;margin:12vh auto;text-align:center;color:var(--muted)}
+.empty h2{font-family:'Caveat',cursive;color:var(--cream);font-size:2.2rem;margin:0 0 6px}
+.grid{display:flex;flex-wrap:wrap;gap:26px}
+.note{width:240px;min-height:180px;background:var(--cream);color:var(--ink);border-radius:2px;padding:20px 16px 14px;box-shadow:3px 6px 14px #0005;position:relative;font-family:'Caveat',cursive;font-size:1.22rem;line-height:1.3}
+.note::before{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:var(--pin)}
+.note.ig{background:var(--ig)}.note.tt{background:var(--tt)}.note.x{background:var(--x)}
+.note .tags{margin-top:8px;font-family:'Inter',sans-serif;font-size:.7rem;font-weight:600;color:#00000099}
+.note .bar{margin-top:10px;text-align:right}
+.note .bar button{border:none;background:#00000014;color:var(--ink);font-family:'Inter',sans-serif;font-size:.68rem;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer}
+@media (max-width:760px){.app{flex-direction:column}.sidebar{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div>
+      <p class="brand">The Caption <span>Board</span></p>
+      <p class="sub">Local prototype — talks to your own Claude API key.</p>
+    </div>
+
+    <div class="plan-box">
+      <div class="plan-row"><strong id="planLabel">Free plan</strong><span id="usageText">0 / 15 used</span></div>
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+      <div class="plan-toggle" style="margin-top:10px">
+        <button id="btnFree" class="active">Simulate: Free</button>
+        <button id="btnPro">Simulate: Pro</button>
+      </div>
+    </div>
+
+    <div>
+      <label for="topic">What's the post about?</label>
+      <textarea id="topic" placeholder="e.g. new matcha latte launching this weekend"></textarea>
+    </div>
+
+    <div>
+      <label>Platform</label>
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-p="ig">Instagram</button>
+        <button class="tab" data-p="tt">TikTok</button>
+        <button class="tab" data-p="x">X</button>
+      </div>
+    </div>
+
+    <div>
+      <label>Tone</label>
+      <div class="chips" id="chips">
+        <button class="chip active" data-t="Playful">Playful</button>
+        <button class="chip" data-t="Bold">Bold</button>
+        <button class="chip" data-t="Witty">Witty</button>
+        <button class="chip" data-t="Minimal">Minimal</button>
+        <button class="chip" data-t="Heartfelt">Heartfelt</button>
+      </div>
+    </div>
+
+    <div class="go">
+      <button id="genBtn">Pin 5 new captions</button>
+      <p class="status" id="status"></p>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="empty" id="empty">
+      <h2>Nothing pinned yet</h2>
+      <p>Describe your post on the left and hit the button.</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<script>
+let platform = 'ig', tone = 'Playful';
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active'); platform=b.dataset.p;
+});
+document.getElementById('chips').addEventListener('click', e=>{
+  const b=e.target.closest('.chip'); if(!b) return;
+  document.querySelectorAll('.chip').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active'); tone=b.dataset.t;
+});
+
+function setStatus(msg, isErr){
+  const s=document.getElementById('status');
+  s.textContent=msg||''; s.classList.toggle('err', !!isErr);
+}
+
+function updatePlanUI(info){
+  document.getElementById('planLabel').textContent = info.tier==='pro' ? 'Pro plan' : 'Free plan';
+  document.getElementById('usageText').textContent = `${info.used} / ${info.limit} used`;
+  document.getElementById('barFill').style.width = Math.min(100, (info.used/info.limit)*100) + '%';
+  document.getElementById('btnFree').classList.toggle('active', info.tier==='free');
+  document.getElementById('btnPro').classList.toggle('active', info.tier==='pro');
+}
+
+async function refreshMe(){
+  const r = await fetch('/api/me'); const info = await r.json(); updatePlanUI(info);
+}
+document.getElementById('btnFree').addEventListener('click', async ()=>{
+  const r = await fetch('/api/set-tier', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({tier:'free'})});
+  updatePlanUI(await r.json());
+});
+document.getElementById('btnPro').addEventListener('click', async ()=>{
+  const r = await fetch('/api/set-tier', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({tier:'pro'})});
+  updatePlanUI(await r.json());
+});
+
+function renderNotes(items){
+  const grid=document.getElementById('grid');
+  document.getElementById('empty').style.display='none';
+  grid.innerHTML='';
+  const cls = platform;
+  items.forEach(it=>{
+    const div=document.createElement('div');
+    div.className='note '+cls;
+    const tags=(it.hashtags||[]).map(t=>'#'+t).join(' ');
+    div.innerHTML=`<div class="cap"></div><div class="tags"></div><div class="bar"><button data-copy>Copy</button></div>`;
+    div.querySelector('.cap').textContent = it.caption||'';
+    div.querySelector('.tags').textContent = tags;
+    div.querySelector('[data-copy]').addEventListener('click', ()=>{
+      navigator.clipboard.writeText((it.caption||'')+(tags?'\n\n'+tags:''));
+      const btn=div.querySelector('[data-copy]'); const old=btn.textContent;
+      btn.textContent='Copied'; setTimeout(()=>btn.textContent=old,1200);
+    });
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById('genBtn').addEventListener('click', async ()=>{
+  const topic=document.getElementById('topic').value.trim();
+  if(!topic){ setStatus('Tell us what the post is about first.', true); return; }
+  const btn=document.getElementById('genBtn'); btn.disabled=true;
+  setStatus('Thinking of captions…');
+  try{
+    const r = await fetch('/api/generate', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({topic, platform, tone})
+    });
+    const data = await r.json();
+    if(!r.ok){
+      setStatus(data.message || 'Something went wrong.', true);
+    } else {
+      renderNotes(data.captions);
+      updatePlanUI({tier: document.getElementById('btnPro').classList.contains('active')?'pro':'free', used: data.used, limit: data.limit});
+      setStatus(`Pinned ${data.captions.length} captions. ${data.remaining} left this month.`);
+    }
+  }catch(e){
+    setStatus('Could not reach the server — is it running?', true);
+  }finally{
+    btn.disabled=false;
+  }
+});
+
+refreshMe();
+</script>
+</body>
+</html>

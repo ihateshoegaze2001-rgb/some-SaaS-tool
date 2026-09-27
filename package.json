@@ -1,0 +1,18 @@
+{
+  "name": "caption-board-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local prototype for the Caption Board freemium tool",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
+  }
+}
